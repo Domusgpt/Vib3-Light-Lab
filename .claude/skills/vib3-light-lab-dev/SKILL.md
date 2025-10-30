@@ -1,631 +1,215 @@
 ---
-name: VIB3 Light Lab Development
-description: Specialized development skill for VIB3 Light Lab - Flutter-based live performance controller for 4D WebGL visualization systems with audio reactivity, MIDI/OSC integration, and professional VJ workflows.
+name: vib3-light-lab-dev
+description: Develops VIB3 Light Lab Flutter app controlling 4D WebGL visualizations with VIB34D quaternion shaders and MVEP kernel. Use for Flutter+Riverpod+WebGL development, VIB34D/MVEP integration, 4D rotation parameters (rot4dXW/YW/ZW), audio reactivity FFT, MIDI/OSC protocols, Syphon/Spout/NDI video output, vaporwave holographic UI, live performance controllers, VJ software features, or when user mentions VIB3, VIB34D, MVEP, quaternion shaders, 4D visualization, or live visual performance.
 ---
 
-# VIB3 Light Lab Development Skill
+# VIB3 Light Lab Development
 
-## Overview
+Flutter app controlling 4D WebGL visualizations (VIB34D/MVEP systems) for live VJ performances.
 
-VIB3 Light Lab is a **Flutter-based live performance controller** for 4D WebGL visualization engines. This skill provides comprehensive guidance for building a professional-grade visual performance instrument with modular UI, haptic control, and industry-standard protocol integration (OSC, MIDI, Syphon/Spout, NDI).
+**Stack**: Flutter + Riverpod + InAppWebView + VIB34D quaternion shaders
+**Architecture**: Flutter UI ↔ WebGL Bridge ↔ VIB34D ↔ GLSL Shaders
 
-**Project Type**: Flutter + WebGL2 hybrid application
-**Target Platforms**: Desktop (Windows, macOS, Linux) + Mobile companion apps
-**Architecture**: Flutter UI ↔ WebGL Bridge ↔ WebGL2 Visualization Engines
-**Use Cases**: Live VJ performances, projection mapping, creative coding, visual art
+## Quick Reference
 
-## Core Project Documentation
+### 11 Universal Parameters
 
-This skill references comprehensive analysis and planning documents:
+All parameter names MUST match between Flutter and VIB34D JavaScript exactly:
 
-### 📊 Analysis Documents
-
-**[VIB3_LIGHT_LAB_UI_ARCHITECTURE_ANALYSIS.md](../../VIB3_LIGHT_LAB_UI_ARCHITECTURE_ANALYSIS.md)** (18KB)
-- Current UI architecture deep dive
-- Framework comparison: Flutter 8.5/10 vs React 7/10
-- Discovered 400KB unused PerformanceSuite code
-- Critical UI limitations requiring Flutter's modular widget system
-- **Key Finding**: Fixed 300px panel unsuitable for live performance
-
-**[SYSTEM_TEST_RESULTS.md](../../SYSTEM_TEST_RESULTS.md)** (22KB)
-- Comprehensive testing methodology
-- 2 critical bugs documented (toggle state sync, gallery saves)
-- Quality gates for production readiness
-- Performance metrics and success criteria
-- Week 1 stabilization priorities
-
-**[IMPLEMENTATION_ROADMAP.md](../../IMPLEMENTATION_ROADMAP.md)** (41KB)
-- **Complete Flutter implementation with Riverpod**
-- WebGL Bridge architecture for Flutter ↔ WebGL2 communication
-- Widget library specifications
-- State management patterns
-- 20-week implementation timeline
-- Full code examples for all components
-
-**[PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md](../../PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md)** (65KB)
-- Industry research: Resolume, TouchDesigner, lighting consoles
-- 8 essential UI elements for live performance controllers
-- Complete SDK/plugin architecture
-- Protocol handlers: OSC, MIDI, DMX, ArtNet
-- Video output standards: Syphon (macOS), Spout (Windows), NDI (network)
-- Audio reactivity engine with FFT and 7-band frequency analysis
-- Beat detection algorithms (kick, snare, hi-hat)
-- Vaporwave holographic design system rules
-- Agent-friendly async architecture
-
-**[EXECUTIVE_SUMMARY.md](../../EXECUTIVE_SUMMARY.md)** (31KB)
-- Concise overview of all findings
-- Clear Flutter recommendation for haptic control
-- Three strategic paths with timelines
-- Immediate next steps guide
-
-## VIB3-Specific Architecture
+```dart
+geometry       // 0-7 (8 4D shapes)
+rot4dXW        // -6.28 to 6.28 (4D rotation X-W plane)
+rot4dYW        // -6.28 to 6.28 (4D rotation Y-W plane)
+rot4dZW        // -6.28 to 6.28 (4D rotation Z-W plane)
+gridDensity    // 5-100
+morphFactor    // 0-2
+chaos          // 0-1
+speed          // 0.1-3
+hue            // 0-360
+intensity      // 0-1
+saturation     // 0-1
+```
 
 ### 4 Visualization Systems
 
-VIB3 Light Lab controls 4 distinct WebGL2 visualization engines:
+- `faceted` - 2D geometric patterns
+- `quantum` - 3D lattice effects
+- `holographic` - Audio-reactive
+- `polychora` - 4D polytope math
 
-1. **🔷 FACETED** - Simple 2D geometric patterns
-2. **🌌 QUANTUM** - Complex 3D lattice effects
-3. **✨ HOLOGRAPHIC** - Audio-reactive pink/magenta visualizations
-4. **🔮 POLYCHORA** - 4D polytope mathematics with projection
+### 8 Geometries (geometry: 0-7)
 
-Each system shares 11 universal parameters:
-- `geometry` (0-7): 8 different polytope types
-- `rot4dXW`, `rot4dYW`, `rot4dZW`: 4D rotation angles (-6.28 to 6.28)
-- `gridDensity` (5-100): Detail/complexity level
-- `morphFactor` (0-2): Shape transformation
-- `chaos` (0-1): Randomization factor
-- `speed` (0.1-3): Animation speed
-- `hue` (0-360): Color hue
-- `intensity` (0-1): Brightness
-- `saturation` (0-1): Color saturation
+Hypercube, Hypertetrahedron, Hypersphere, Torus, Klein Bottle, Crystal, Fractal, Wave
 
-### Flutter ↔ WebGL Bridge Architecture
+### VIB34D Integration Points
 
-**Critical Component**: The bridge enables Flutter to control WebGL2 rendering
+**Parameter sync required**: Flutter const names = VIB34D JavaScript property names
 
+**Bridge communication pattern**:
 ```dart
-// lib/bridges/webgl_bridge.dart
-class WebGLBridge {
-  final WebViewController _webViewController;
-  final StreamController<EngineState> _stateController;
+// Flutter → VIB34D
+await bridge.updateParameters({'rot4dXW': 1.57, 'hue': 240});
 
-  // Send commands to WebGL
-  Future<void> switchSystem(String system) async {
-    await _webViewController.runJavascriptReturningResult(
-      'window.switchSystem("$system")'
-    );
-  }
+// VIB34D → Flutter (add to HTML)
+window.FlutterBridge.postMessage(JSON.stringify({
+  type: 'parameterChanged',
+  name: 'rot4dXW',
+  value: 1.57
+}));
+```
 
-  Future<void> updateParameter(String name, double value) async {
-    await _webViewController.runJavascriptReturningResult(
-      'window.updateParameter("$name", $value)'
-    );
-  }
+**Required JavaScript additions to VIB34D HTML**:
+See [docs/WEBGL_INTEGRATION.md](docs/WEBGL_INTEGRATION.md) section "Required JavaScript Additions"
 
-  // Receive events from WebGL
-  void setupBridge() {
-    _webViewController.addJavaScriptChannel(
-      'FlutterBridge',
-      onMessageReceived: (message) {
-        final event = jsonDecode(message.message);
-        _handleWebGLEvent(event);
-      },
-    );
-  }
+### Quaternion Shader Pipeline
+
+Flutter slider → Bridge → VIB34D uniform → GLSL shader:
+
+```glsl
+// In shader: 4D rotation applied
+vec4 rotated = rotate4D(position, rot4dXW, rot4dYW, rot4dZW);
+vec3 projected = project4Dto3D(rotated);
+```
+
+**6-plane rotation system**: XY, XZ, XW, YZ, YW, ZW
+
+### Vaporwave Design System
+
+**Colors** (`lib/config/theme.dart`):
+```dart
+cyan: 0xFF00FFFF, magenta: 0xFFFF00FF, purple: 0xFF9D00FF,
+pink: 0xFFFF0099, deepPurple: 0xFF2D033B, darkNavy: 0xFF0A0E27
+```
+
+**Glassmorphic containers**:
+- Gradient: `[Color(0x22FF00FF), Color(0x1100FFFF)]`
+- Border: `Color(0x44FF00FF), width: 2`
+- Shadow: `blurRadius: 20, spreadRadius: 2`
+
+**Typography**: Orbitron font with glow effects (shadow blur: 6-10)
+
+### Performance Targets
+
+- Parameter update: < 16ms (60 FPS)
+- System switch: < 300ms
+- Preset load: < 2 seconds
+- Touch targets: 60-80px (WCAG AAA)
+
+### Critical Patterns
+
+**Batch parameter updates** (performance-critical):
+```dart
+// ✅ Single WebGL call
+await bridge.updateParameters({'rot4dXW': 1.57, 'rot4dYW': 0.78});
+
+// ❌ Multiple calls (slower)
+await bridge.updateParameter('rot4dXW', 1.57);
+await bridge.updateParameter('rot4dYW', 0.78);
+```
+
+**Throttle UI updates** (16ms = 60 FPS):
+```dart
+Timer? _throttle;
+void onSliderChanged(String param, double value) {
+  _throttle?.cancel();
+  _throttle = Timer(Duration(milliseconds: 16), () {
+    ref.read(engineProvider.notifier).updateParameter(param, value);
+  });
 }
 ```
 
-**Reference**: See IMPLEMENTATION_ROADMAP.md section "Phase 3: WebGL Bridge" for complete implementation
-
-### State Management with Riverpod
-
-**Why Riverpod**: Type-safe, compile-time checked, excellent for complex parameter systems
-
+**Immutable state** (always use copyWith):
 ```dart
-// lib/providers/engine_provider.dart
-final engineProvider = StateNotifierProvider<EngineNotifier, EngineState>((ref) {
-  return EngineNotifier(ref.read(webglBridgeProvider));
-});
-
-class EngineState {
-  final String currentSystem;
-  final Map<String, double> parameters;
-  final bool audioEnabled;
-  final bool interactivityEnabled;
-
-  // Immutable state pattern
-  EngineState copyWith({
-    String? currentSystem,
-    Map<String, double>? parameters,
-    bool? audioEnabled,
-  }) {
-    return EngineState(
-      currentSystem: currentSystem ?? this.currentSystem,
-      parameters: parameters ?? this.parameters,
-      audioEnabled: audioEnabled ?? this.audioEnabled,
-    );
-  }
-}
+state = state.copyWith(
+  parameters: {...state.parameters, 'hue': 240},
+);
 ```
 
-**Reference**: See IMPLEMENTATION_ROADMAP.md "Phase 4: Parameter System"
+## File Locations
 
-## Professional Performance Features
-
-### 8 Essential UI Elements
-
-Based on industry standards (Resolume, TouchDesigner, ETC Eos):
-
-1. **Layer Management System**
-   - Multiple visualization layers with blend modes
-   - Opacity control, solo/mute per layer
-   - Drag-to-reorder layers
-
-2. **Preset/Scene Management**
-   - Quick-save current state (< 1 second)
-   - Instant recall (< 2 seconds)
-   - Crossfade between presets
-   - Organization in banks/folders
-
-3. **BPM Sync & Timeline**
-   - Manual tap tempo
-   - Auto beat detection from audio
-   - Time-based automation curves
-
-4. **Audio Reactivity Control**
-   - 7 frequency bands (sub, bass, low-mid, mid, high-mid, high, air)
-   - Envelope followers (RMS, peak, LUFS)
-   - Beat detection (kick, snare, hi-hat)
-   - FFT visualization
-   - Per-parameter audio mapping
-
-5. **Effect Routing & Modulation**
-   - LFOs (sine, square, saw, random)
-   - Envelope generators (ADSR)
-   - Parameter → parameter modulation
-
-6. **Multi-Output Management**
-   - Syphon server (macOS)
-   - Spout server (Windows)
-   - NDI streaming (network)
-   - Multiple display outputs
-
-7. **Macro/Gesture Recorder**
-   - Record multi-parameter gestures
-   - Playback with speed control
-   - Loop/trigger modes
-
-8. **Hardware I/O Panel**
-   - MIDI controller mapping (learn mode)
-   - OSC endpoint configuration
-   - DMX output for lighting sync
-
-**Reference**: See PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md "8 Essential UI Elements"
-
-### Vaporwave Holographic Design System
-
-**Color Palette**:
-```dart
-class VIB3Colors {
-  static const cyan = Color(0xFF00FFFF);
-  static const magenta = Color(0xFFFF00FF);
-  static const purple = Color(0xFF9D00FF);
-  static const pink = Color(0xFFFF0099);
-  static const deepPurple = Color(0xFF2D033B);
-  static const darkNavy = Color(0xFF0A0E27);
-}
+```
+vib3_light_lab/lib/
+├── bridges/webgl_bridge.dart       # Flutter ↔ WebGL communication
+├── config/
+│   ├── constants.dart              # VIB3Parameters, VIB3Systems
+│   └── theme.dart                  # VIB3Colors, glassmorphic styles
+├── models/engine_state.dart        # Immutable EngineState, Preset
+├── providers/                      # Riverpod providers (pending)
+├── services/{audio,midi}/          # FFT, MIDI (pending)
+└── widgets/{controls,displays,panels}/  # UI components (pending)
 ```
 
-**Typography**:
-```dart
-class VIB3TextStyles {
-  static const heading = TextStyle(
-    fontFamily: 'Orbitron',
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 2.0,
-    shadows: [
-      Shadow(color: Color(0xFFFF00FF), blurRadius: 10),
-    ],
-  );
-}
-```
+## Audio Reactivity
 
-**Glassmorphic Containers**:
-```dart
-Container(
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: [
-        Color(0x22FF00FF),
-        Color(0x1100FFFF),
-      ],
-    ),
-    borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: Color(0x44FF00FF), width: 2),
-    boxShadow: [
-      BoxShadow(
-        color: Color(0x44FF00FF),
-        blurRadius: 20,
-        spreadRadius: 2,
-      ),
-    ],
-  ),
-  child: BackdropFilter(
-    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-    child: child,
-  ),
-)
-```
+**7 frequency bands**: sub (20-60Hz), bass (60-250Hz), low-mid (250-500Hz), mid (500-2000Hz), high-mid (2000-6000Hz), high (6000-16000Hz), air (16000-20000Hz)
 
-**Reference**: See PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md "Vaporwave Holographic Design System"
-
-## Audio Reactivity Integration
-
-### FFT Analysis Pipeline
-
-```dart
-// lib/audio/fft_analyzer.dart
-class FFTAnalyzer {
-  static const int fftSize = 4096;
-  static const double smoothing = 0.8;
-
-  final List<FrequencyBand> bands = [
-    FrequencyBand(name: 'sub', min: 20, max: 60),
-    FrequencyBand(name: 'bass', min: 60, max: 250),
-    FrequencyBand(name: 'low-mid', min: 250, max: 500),
-    FrequencyBand(name: 'mid', min: 500, max: 2000),
-    FrequencyBand(name: 'high-mid', min: 2000, max: 6000),
-    FrequencyBand(name: 'high', min: 6000, max: 16000),
-    FrequencyBand(name: 'air', min: 16000, max: 20000),
-  ];
-
-  Stream<Map<String, double>> analyzeMicrophone() async* {
-    // FFT analysis implementation
-    // Returns normalized values (0.0-1.0) for each band
-  }
-}
-```
-
-### Beat Detection
-
-```dart
-// lib/audio/beat_detector.dart
-class BeatDetector {
-  double kickThreshold = 0.6;
-  double snareThreshold = 0.5;
-  double hihatThreshold = 0.4;
-
-  Stream<BeatEvent> detectBeats(Stream<Map<String, double>> fftStream) async* {
-    // Energy-based beat detection
-    // Analyzes sub (kick), mid (snare), high (hi-hat)
-  }
-}
-```
-
-**Reference**: See PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md "Audio Reactivity Engine"
-
-## SDK/Plugin Architecture
-
-### For Integration with Host Software
-
-VIB3 Light Lab can operate as both:
-1. **Standalone application** (desktop + mobile)
-2. **Plugin/SDK** for other VJ software (Resolume, TouchDesigner, etc.)
-
-```dart
-// lib/sdk/vib3_sdk.dart
-class VIB3SDK {
-  // Initialize VIB3 engines
-  Future<void> initialize() async { }
-
-  // Parameter control
-  void setParameter(String name, double value) { }
-  Map<String, double> getParameters() { }
-
-  // System control
-  void switchSystem(String system) { }
-
-  // Video output
-  VideoFrame captureFrame() { }
-
-  // OSC/MIDI input
-  void sendOSCMessage(String address, List<dynamic> args) { }
-  void sendMIDICC(int controller, int value) { }
-}
-```
-
-**Video Output Plugins**:
-- **Syphon** (macOS): GPU-accelerated texture sharing
-- **Spout** (Windows): DirectX texture sharing
-- **NDI**: Network video streaming
-
-**Reference**: See PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md "SDK Architecture"
+**FFT config**: size: 4096, smoothing: 0.8, target: 60 FPS
 
 ## Development Workflow
 
-### Phase-by-Phase Implementation
+**Phase 1-2 complete**: Flutter project, WebGL bridge, models, config
+**Phase 3 (current)**: Riverpod providers integrating WebGLBridge
+**Phase 4-5 (pending)**: UI widgets, audio/MIDI services
 
-**Phase 1: Flutter Project Setup** (Week 1)
-```bash
-flutter create vib3_light_lab --org com.clearseassolutions
-cd vib3_light_lab
-flutter pub add flutter_riverpod webview_flutter
-```
+## Comprehensive Documentation
 
-**Phase 2: Core Widget Library** (Weeks 2-3)
-- VIB3Button, VIB3Slider, VIB3Panel
-- Glassmorphic containers
-- Holographic text effects
+All detailed implementation guides in `docs/`:
 
-**Phase 3: WebGL Bridge** (Week 4)
-- Bidirectional JavaScript bridge
-- State synchronization
-- Event handling
+- **[UI_ARCHITECTURE.md](docs/UI_ARCHITECTURE.md)** - Architecture analysis, framework comparison
+- **[IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md)** - 20-week plan, complete code examples
+- **[PRODUCTION_DESIGN.md](docs/PRODUCTION_DESIGN.md)** - Industry standards, SDK architecture
+- **[WEBGL_INTEGRATION.md](docs/WEBGL_INTEGRATION.md)** - VIB34D/MVEP integration, quaternion shaders
+- **[SYSTEM_TEST_RESULTS.md](docs/SYSTEM_TEST_RESULTS.md)** - Bugs, quality gates, testing
 
-**Phase 4: Parameter System** (Weeks 5-6)
-- 11 universal parameters
-- Parameter groups and organization
-- Preset save/load
+**Flutter setup**: See `FLUTTER_SETUP.md` in project root
 
-**Phase 5: Audio Reactivity** (Weeks 7-9)
-- FFT analysis with flutter_sound
-- Beat detection
-- Audio → parameter mapping UI
+## Dependencies
 
-**Phase 6: Hardware I/O** (Weeks 10-13)
-- MIDI with flutter_midi_command
-- OSC with dart_osc
-- Controller mapping interface
+State: `flutter_riverpod`, WebGL: `flutter_inappwebview`, Audio: `flutter_sound`, MIDI: `flutter_midi_command`, UI: `flutter_colorpicker`, `fl_chart`
 
-**Phase 7: Advanced Features** (Weeks 14-20)
-- Multi-output video (Syphon/Spout/NDI)
-- Gesture recorder
-- Show planner
-- Cloud preset library
+## Common Tasks
 
-**Reference**: See IMPLEMENTATION_ROADMAP.md for complete timeline with code examples
-
-## Common Development Patterns
-
-### Parameter Update Pattern
-
+**Create parameter slider**:
 ```dart
-// UI widget updates parameter
-ref.read(engineProvider.notifier).updateParameter('hue', 180.0);
-
-// Provider updates state and notifies bridge
-class EngineNotifier extends StateNotifier<EngineState> {
-  final WebGLBridge bridge;
-
-  void updateParameter(String name, double value) {
-    state = state.copyWith(
-      parameters: {...state.parameters, name: value},
+class VIB3Slider extends ConsumerWidget {
+  final String parameter;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final value = ref.watch(engineProvider).parameters[parameter] ?? 0.0;
+    final range = VIB3Parameters.ranges[parameter]!;
+    return Slider(
+      value: value, min: range.min, max: range.max,
+      onChanged: (v) => ref.read(engineProvider.notifier)
+        .updateParameter(parameter, v),
     );
-    bridge.updateParameter(name, value); // Send to WebGL
-  }
-}
-
-// WebGL receives update via bridge
-window.updateParameter = function(name, value) {
-  const engine = engines[window.currentSystem];
-  engine.setParameter(name, value);
-};
-```
-
-### System Switch Pattern
-
-```dart
-// User clicks system button
-ref.read(engineProvider.notifier).switchSystem('quantum');
-
-// Provider orchestrates switch
-void switchSystem(String system) async {
-  state = state.copyWith(currentSystem: system);
-  await bridge.switchSystem(system);
-  // Re-apply all current parameters to new system
-  for (var entry in state.parameters.entries) {
-    await bridge.updateParameter(entry.key, entry.value);
   }
 }
 ```
 
-### Audio Mapping Pattern
-
+**System switch button**:
 ```dart
-// User maps audio band to parameter
-ref.read(audioMappingProvider.notifier).mapBandToParameter(
-  band: 'bass',
-  parameter: 'intensity',
-  min: 0.3,
-  max: 1.0,
-);
-
-// Audio stream updates parameters
-audioStream.listen((bands) {
-  final mappings = ref.read(audioMappingProvider);
-  for (var mapping in mappings) {
-    final audioValue = bands[mapping.band]!;
-    final paramValue = mapping.min + (audioValue * (mapping.max - mapping.min));
-    ref.read(engineProvider.notifier).updateParameter(
-      mapping.parameter,
-      paramValue,
-    );
-  }
-});
+ElevatedButton(
+  onPressed: () => ref.read(engineProvider.notifier).switchSystem('quantum'),
+  child: Text(VIB3Systems.names['quantum']!),
+)
 ```
 
-## Critical Bug Fixes (Week 1)
+## VIB34D Presets
 
-Before starting Flutter development, fix 2 critical bugs in existing WebGL codebase:
+Available: `hypercube-focus`, `fractal-dreams`, `chaos-mode`, `crystal-lattice`, `wave-interference`
 
-### Bug #1: Toggle State Synchronization
-**File**: `index.html` lines 1895-1921 (toggleAudio)
-**Problem**: UI buttons show incorrect state after system switch
-**Fix Duration**: 4 hours
+Load via: `await bridge.evaluateJavaScript('window.vib34d.presetDatabase.loadPreset("hypercube-focus")')`
 
-### Bug #2: Gallery Save Failures
-**File**: `src/core/UnifiedSaveManager.js`
-**Problem**: Inconsistent parameter capture across 4 systems
-**Fix Duration**: 4 hours
+## MVEP Kernel (Optional)
 
-**Reference**: See SYSTEM_TEST_RESULTS.md "Critical Issues"
+Data-driven visualization layer. Maps data properties → parameters:
+- complexity → dimension
+- structure → morphFactor
+- variety → hue
+- changeRate → rotation
+- detail → gridDensity
 
-## Testing Strategy
-
-### Unit Tests
-```dart
-test('parameter update triggers WebGL bridge', () async {
-  final bridge = MockWebGLBridge();
-  final notifier = EngineNotifier(bridge);
-
-  notifier.updateParameter('hue', 240.0);
-
-  verify(bridge.updateParameter('hue', 240.0)).called(1);
-  expect(notifier.state.parameters['hue'], 240.0);
-});
-```
-
-### Widget Tests
-```dart
-testWidgets('slider updates parameter', (tester) async {
-  await tester.pumpWidget(
-    ProviderScope(
-      child: VIB3Slider(parameter: 'intensity'),
-    ),
-  );
-
-  await tester.drag(find.byType(Slider), Offset(100, 0));
-  await tester.pumpAndSettle();
-
-  // Verify parameter value updated
-});
-```
-
-### Integration Tests
-```dart
-testWidgets('system switch preserves parameters', (tester) async {
-  // Set parameters in faceted system
-  // Switch to quantum system
-  // Verify parameters applied correctly
-});
-```
-
-## Performance Targets
-
-- **Parameter Update Latency**: < 16ms (60 FPS)
-- **System Switch Time**: < 300ms
-- **Preset Load Time**: < 2 seconds
-- **Audio FFT Analysis**: 60 FPS (16.67ms per frame)
-- **Touch Target Size**: 60-80px (WCAG AAA)
-- **App Bundle Size**: < 50MB
-
-**Reference**: See SYSTEM_TEST_RESULTS.md "Success Metrics"
-
-## Agent-Friendly Architecture
-
-Design for AI agent control and future platform integration:
-
-### REST API
-```dart
-// Expose HTTP endpoints for agent control
-@Get('/api/parameter/:name')
-Future<Response> getParameter(String name) async { }
-
-@Post('/api/parameter/:name')
-Future<Response> setParameter(String name, double value) async { }
-
-@Post('/api/sequence')
-Future<Response> executeSequence(List<Command> commands) async { }
-```
-
-### WebSocket for Real-Time Control
-```dart
-// Bidirectional communication for live agent control
-websocket.stream.listen((message) {
-  final command = Command.fromJson(message);
-  commandQueue.add(command);
-});
-```
-
-### Event-Driven Architecture
-```dart
-// Agents can subscribe to telemetry events
-eventBus.on<ParameterChangedEvent>().listen((event) {
-  telemetryService.log(event);
-});
-```
-
-**Reference**: See PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md "Agent Architecture"
-
-## Integration with Other Skills
-
-This skill works alongside:
-
-- **flutter-expert**: Core Flutter development patterns, Firebase, deployment
-- **visual-codex-styles**: Holographic visual effects and shader systems
-- **github-scanner**: Repository analysis and activity tracking
-
-## When to Use This Skill
-
-Invoke this skill for VIB3 Light Lab development:
-
-- ✅ Flutter UI development with WebGL integration
-- ✅ Parameter system and state management
-- ✅ Audio reactivity implementation
-- ✅ MIDI/OSC hardware integration
-- ✅ Video output (Syphon/Spout/NDI)
-- ✅ Preset management and gallery system
-- ✅ Vaporwave holographic design system
-- ✅ SDK/plugin architecture
-- ✅ Agent-friendly API design
-- ✅ Performance optimization for live use
-
-## Quick Command Reference
-
-```bash
-# Start local WebGL server
-python3 -m http.server 8151
-
-# Create Flutter app
-flutter create vib3_light_lab --org com.clearseassolutions
-
-# Run Flutter app
-flutter run -d windows  # or macos, linux
-
-# Install dependencies
-flutter pub add flutter_riverpod webview_flutter flutter_sound dart_osc
-
-# Run tests
-flutter test
-
-# Build release
-flutter build windows --release
-flutter build macos --release
-```
-
-## Documentation Checklist
-
-When working on VIB3 Light Lab, always reference:
-
-- [ ] VIB3_LIGHT_LAB_UI_ARCHITECTURE_ANALYSIS.md - Current system analysis
-- [ ] SYSTEM_TEST_RESULTS.md - Known bugs and quality gates
-- [ ] IMPLEMENTATION_ROADMAP.md - Phase-by-phase plan with code examples
-- [ ] PROFESSIONAL_PRODUCTION_PLATFORM_DESIGN.md - Industry standards and protocols
-- [ ] EXECUTIVE_SUMMARY.md - Quick reference and decision framework
+See WEBGL_INTEGRATION.md "MVEP Kernel Integration" for configuration.
 
 ---
 
-**🌟 A Paul Phillips Manifestation**
-
-VIB3 Light Lab - Professional 4D visualization performance controller built with Flutter, WebGL2, and revolutionary exoditical design thinking.
-
-**Send Love, Hate, or Opportunity to:** Paul@clearseassolutions.com
-**Join The Exoditical Moral Architecture Movement:** [Parserator.com](https://parserator.com)
-
-> *"The Revolution Will Not be in a Structured Format"*
-
 **© 2025 Paul Phillips - Clear Seas Solutions LLC**
-**All Rights Reserved - Proprietary Technology**
