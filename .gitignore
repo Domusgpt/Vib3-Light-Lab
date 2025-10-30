@@ -1,0 +1,256 @@
+# VIB3 Light Lab - Git Ignore Configuration
+
+# ============================================
+# ENVIRONMENT & SECRETS
+# ============================================
+.env
+.env.local
+.env.*.local
+*.key
+*.keystore
+*.jks
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+
+# ============================================
+# FLUTTER & DART
+# ============================================
+
+# Build outputs
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Flutter coverage
+coverage/
+*.lcov
+
+# Flutter/Dart generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# iOS/macOS
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/*sync/
+.sconsign.dblite
+.tags*
+**/.vagrant/
+**/DerivedData/
+Icon?
+**/Pods/
+**/.symlinks/
+profile
+xcuserdata
+**/.generated/
+Flutter/App.framework
+Flutter/Flutter.framework
+Flutter/Flutter.podspec
+Flutter/Generated.xcconfig
+**/Flutter/ephemeral/
+**/Flutter/App.framework/
+**/Flutter/Flutter.framework/
+**/Flutter/Generated.xcconfig
+**/ServiceDefinitions.json
+**/Runner/GeneratedPluginRegistrant.*
+
+# Android
+**/android/**/gradle-wrapper.jar
+.gradle
+/captures/
+/gradlew
+/gradlew.bat
+/local.properties
+GeneratedPluginRegistrant.java
+key.properties
+**/*.jks
+
+# Linux
+/linux/flutter/ephemeral/
+
+# Windows
+/windows/flutter/ephemeral/
+
+# Web
+/web/.dart_tool/
+
+# ============================================
+# IDEs & EDITORS
+# ============================================
+
+# IntelliJ / Android Studio
+.idea
+*.iml
+*.ipr
+*.iws
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.idea/**/contentModel.xml
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# ============================================
+# NODE.JS (for Firebase CLI, tooling)
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+
+# ============================================
+# MACOS
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================
+# WINDOWS
+# ============================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# ============================================
+# LINUX
+# ============================================
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# LOGS & TEMP FILES
+# ============================================
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+local.properties
+
+# ============================================
+# VIB3 LIGHT LAB SPECIFIC
+# ============================================
+
+# Local preset storage
+/presets/local/
+*.preset.local
+
+# Gallery exports
+/gallery/exports/temp/
+
+# Performance profiling data
+/debug-info/
+*.timeline
+*.trace
+
+# WebGL build artifacts
+/webgl/build/
+/webgl/dist/
+
+# Audio recordings (if capturing for testing)
+/audio/recordings/
+
+# Video output captures
+/video/captures/
+
+# Agent telemetry data (keep example files)
+/telemetry/data/
+!telemetry/data/.gitkeep
+
+# ============================================
+# DOCUMENTATION ARTIFACTS
+# ============================================
+*.pdf
+*.docx
+/docs/generated/
+
+# ============================================
+# TESTING
+# ============================================
+test_coverage/
+.test_coverage/
+integration_test/screenshots/
+integration_test/recordings/
+
+# ============================================
+# DEPENDENCIES (keep lock files for reproducibility)
+# ============================================
+# Keep pubspec.lock for Flutter projects
+# !pubspec.lock
+
+# ============================================
+# MISC
+# ============================================
+*.pid
+*.seed
+*.pid.lock
+.cache
+.sass-cache
+
+# ============================================
+# 🌟 A Paul Phillips Manifestation
+# ============================================
+# VIB3 Light Lab - Professional 4D Visualization Controller
+# Comprehensive .gitignore for Flutter, WebGL, and multi-platform development
+# Paul@clearseassolutions.com | Parserator.com
+# © 2025 Paul Phillips - Clear Seas Solutions LLC
