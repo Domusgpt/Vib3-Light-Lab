@@ -38,7 +38,13 @@ dependencies:
   flutter_riverpod: ^2.5.0
   riverpod_annotation: ^2.3.0
 
-  # WebGL Bridge
+  # OpenGL ES Rendering (flutter_gl)
+  flutter_gl: ^0.0.19
+
+  # Math & Vector Libraries
+  vector_math: ^2.1.4
+
+  # WebGL Bridge (legacy - will be replaced by OpenGL)
   webview_flutter: ^4.4.0
   webview_flutter_web: ^0.2.2
   flutter_inappwebview: ^6.0.0
@@ -100,6 +106,7 @@ flutter:
   assets:
     - ../.env  # Environment configuration
     - assets/fonts/  # Custom fonts (Orbitron for vaporwave aesthetic)
+    - assets/shaders/  # GLSL shaders for VIB34D systems
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
