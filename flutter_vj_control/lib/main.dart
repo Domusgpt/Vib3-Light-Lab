@@ -1,299 +1,340 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'models/visualizer_state.dart';
-import 'screens/control_panel.dart';
-import 'screens/audio_panel.dart';
-import 'screens/preset_panel.dart';
-import 'widgets/visualizer_view.dart';
-import 'theme/vj_theme.dart';
+import 'core/workspace_manager.dart';
+import 'widgets/resizable_panel.dart';
+import 'panels/visualizer_panel.dart';
+import 'panels/pad_matrix_panel.dart';
+import 'panels/parameter_inspector_panel.dart';
+import 'panels/layer_mixer_panel.dart';
+import 'models/panel_config.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Set preferred orientations (landscape for VJ work)
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-    DeviceOrientation.portraitUp,
-  ]);
-
-  // Set system UI overlay style for immersive experience
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Color(0xFF0A0A0A),
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
-  runApp(const VJControlApp());
+void main() {
+  runApp(const VIB34DVJControlApp());
 }
 
-class VJControlApp extends StatelessWidget {
-  const VJControlApp({Key? key}) : super(key: key);
+class VIB34DVJControlApp extends StatelessWidget {
+  const VIB34DVJControlApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => VisualizerState(),
+      create: (_) => WorkspaceManager(),
       child: MaterialApp(
-        title: 'VIB34D VJ Control',
-        theme: VJTheme.darkTheme,
+        title: 'VIB34D VJ Control Suite',
         debugShowCheckedModeBanner: false,
-        home: const MainScreen(),
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          primarySwatch: Colors.purple,
+          scaffoldBackgroundColor: Colors.black,
+          fontFamily: 'Inter',
+        ),
+        home: const VJControlHome(),
       ),
     );
   }
 }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+class VJControlHome extends StatefulWidget {
+  const VJControlHome({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<VJControlHome> createState() => _VJControlHomeState();
 }
 
-class _MainScreenState extends State<MainScreen> {
-  int _selectedPanelIndex = 0;
-  bool _showVisualizer = true;
-  bool _isFullscreen = false;
-
-  final List<Widget> _panels = const [
-    ControlPanel(),
-    AudioPanel(),
-    PresetPanel(),
-  ];
-
-  final List<String> _panelTitles = const [
-    'Control Deck',
-    'Audio Reactivity',
-    'Preset Library',
-  ];
-
-  final List<IconData> _panelIcons = const [
-    Icons.tune,
-    Icons.graphic_eq,
-    Icons.library_music,
-  ];
-
-  void _toggleFullscreen() {
-    setState(() {
-      _isFullscreen = !_isFullscreen;
-      if (_isFullscreen) {
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      } else {
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      }
-    });
-  }
-
+class _VJControlHomeState extends State<VJControlHome> {
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    return Scaffold(
+      body: Consumer<WorkspaceManager>(
+        builder: (context, workspaceManager, child) {
+          final workspace = workspaceManager.currentWorkspace;
 
-    return Consumer<VisualizerState>(
-      builder: (context, state, child) {
-        return Scaffold(
-          appBar: _isFullscreen
-              ? null
-              : AppBar(
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(state.currentSystem.icon),
-                      const SizedBox(width: 8),
-                      const Text('VIB34D VJ Control'),
-                    ],
+          if (workspace == null) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Update workspace manager with screen size
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                workspaceManager.updateScreenSize(
+                  Size(constraints.maxWidth, constraints.maxHeight),
+                );
+              });
+
+              return Stack(
+                children: [
+                  // Background
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.purple.withOpacity(0.1),
+                          Colors.black,
+                        ],
+                        stops: const [0.0, 1.0],
+                      ),
+                    ),
                   ),
-                  actions: [
-                    // Visualizer toggle
-                    IconButton(
-                      icon: Icon(_showVisualizer
-                          ? Icons.visibility
-                          : Icons.visibility_off),
-                      onPressed: () => setState(() => _showVisualizer = !_showVisualizer),
-                      tooltip: 'Toggle Visualizer',
-                    ),
-                    // Fullscreen toggle
-                    IconButton(
-                      icon: Icon(_isFullscreen
-                          ? Icons.fullscreen_exit
-                          : Icons.fullscreen),
-                      onPressed: _toggleFullscreen,
-                      tooltip: 'Toggle Fullscreen',
-                    ),
-                  ],
-                ),
-          body: isLandscape && _showVisualizer
-              ? _buildLandscapeLayout(state)
-              : _buildPortraitLayout(state),
-          bottomNavigationBar: _isFullscreen
-              ? null
-              : _buildBottomNav(),
-        );
+
+                  // Top menu bar
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: _buildMenuBar(workspaceManager),
+                  ),
+
+                  // Panels
+                  ...workspace.panels.map((panelConfig) {
+                    return ResizablePanel(
+                      key: ValueKey(panelConfig.id),
+                      config: panelConfig,
+                      child: _buildPanelContent(panelConfig.type),
+                    );
+                  }),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  /// Build menu bar
+  Widget _buildMenuBar(WorkspaceManager workspaceManager) {
+    return Container(
+      height: 60,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.2),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          // Logo
+          const Text(
+            'VIB34D',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'VJ CONTROL SUITE',
+            style: TextStyle(
+              color: Colors.purple,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
+          const Spacer(),
+
+          // Workspace selector
+          _buildWorkspaceMenu(workspaceManager),
+          const SizedBox(width: 16),
+
+          // Mode toggle
+          _buildModeToggle(workspaceManager),
+          const SizedBox(width: 16),
+
+          // Panel visibility toggles
+          _buildPanelToggles(workspaceManager),
+          const SizedBox(width: 16),
+
+          // Settings
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Settings dialog
+            },
+            tooltip: 'Settings',
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  /// Build workspace dropdown menu
+  Widget _buildWorkspaceMenu(WorkspaceManager workspaceManager) {
+    return PopupMenuButton<String>(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            Text(
+              workspaceManager.currentWorkspace?.name ?? 'Workspace',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+      itemBuilder: (context) {
+        return workspaceManager.savedWorkspaces.entries.map((entry) {
+          return PopupMenuItem<String>(
+            value: entry.key,
+            child: Text(entry.value.name),
+          );
+        }).toList();
+      },
+      onSelected: (workspaceId) {
+        workspaceManager.switchWorkspace(workspaceId);
       },
     );
   }
 
-  Widget _buildLandscapeLayout(VisualizerState state) {
-    return Row(
-      children: [
-        // Visualizer (left side)
-        Expanded(
-          flex: 7,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child: VisualizerView(state: state),
-          ),
-        ),
-        // Control Panel (right side)
-        Expanded(
-          flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border(
-                left: BorderSide(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Panel selector
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: List.generate(
-                      _panels.length,
-                      (index) => Expanded(
-                        child: _PanelTab(
-                          icon: _panelIcons[index],
-                          label: _panelTitles[index],
-                          isSelected: _selectedPanelIndex == index,
-                          onTap: () => setState(() => _selectedPanelIndex = index),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const Divider(height: 1),
-                // Panel content
-                Expanded(child: _panels[_selectedPanelIndex]),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  /// Build mode toggle
+  Widget _buildModeToggle(WorkspaceManager workspaceManager) {
+    final isPerformance = workspaceManager.mode == WorkspaceMode.performance;
 
-  Widget _buildPortraitLayout(VisualizerState state) {
-    if (_showVisualizer) {
-      return Column(
-        children: [
-          // Visualizer (top)
-          Expanded(
-            flex: 4,
-            child: VisualizerView(state: state),
-          ),
-          // Control Panel (bottom)
-          Expanded(
-            flex: 6,
-            child: _panels[_selectedPanelIndex],
-          ),
-        ],
-      );
-    } else {
-      return _panels[_selectedPanelIndex];
-    }
-  }
-
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: _selectedPanelIndex,
-      onTap: (index) => setState(() => _selectedPanelIndex = index),
-      items: List.generate(
-        _panels.length,
-        (index) => BottomNavigationBarItem(
-          icon: Icon(_panelIcons[index]),
-          label: _panelTitles[index],
-        ),
-      ),
-    );
-  }
-}
-
-/// Panel Tab Widget for landscape mode
-class _PanelTab extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PanelTab({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+    return InkWell(
+      onTap: () {
+        workspaceManager.toggleMode();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : Colors.transparent,
-            width: 2,
-          ),
+          color: isPerformance
+              ? Colors.purple.withOpacity(0.6)
+              : Colors.blue.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(4),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           children: [
             Icon(
-              icon,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.6),
-              size: 20,
+              isPerformance ? Icons.play_arrow : Icons.settings,
+              size: 18,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(width: 8),
             Text(
-              label.split(' ').first, // Show first word only
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 10,
+              isPerformance ? 'Performance' : 'Setup',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Build panel visibility toggles
+  Widget _buildPanelToggles(WorkspaceManager workspaceManager) {
+    return Row(
+      children: [
+        _buildPanelToggle(
+          workspaceManager,
+          PanelType.visualizer,
+          Icons.visibility,
+          'Visualizer',
+        ),
+        const SizedBox(width: 4),
+        _buildPanelToggle(
+          workspaceManager,
+          PanelType.padMatrix,
+          Icons.apps,
+          'Pads',
+        ),
+        const SizedBox(width: 4),
+        _buildPanelToggle(
+          workspaceManager,
+          PanelType.parameterInspector,
+          Icons.tune,
+          'Parameters',
+        ),
+        const SizedBox(width: 4),
+        _buildPanelToggle(
+          workspaceManager,
+          PanelType.layerMixer,
+          Icons.layers,
+          'Mixer',
+        ),
+      ],
+    );
+  }
+
+  /// Build individual panel toggle
+  Widget _buildPanelToggle(
+    WorkspaceManager workspaceManager,
+    PanelType type,
+    IconData icon,
+    String tooltip,
+  ) {
+    final panel = workspaceManager.currentWorkspace?.panels.firstWhere(
+      (p) => p.type == type,
+      orElse: () => throw Exception('Panel not found'),
+    );
+
+    final isVisible = panel?.isVisible ?? false;
+
+    return IconButton(
+      icon: Icon(
+        icon,
+        color: isVisible ? Colors.white : Colors.white30,
+      ),
+      onPressed: () {
+        if (panel != null) {
+          workspaceManager.togglePanelVisibility(panel.id);
+        }
+      },
+      tooltip: tooltip,
+    );
+  }
+
+  /// Build panel content based on type
+  Widget _buildPanelContent(PanelType type) {
+    switch (type) {
+      case PanelType.visualizer:
+        return const VisualizerPanel();
+      case PanelType.padMatrix:
+        return const PadMatrixPanel();
+      case PanelType.parameterInspector:
+        return const ParameterInspectorPanel();
+      case PanelType.layerMixer:
+        return const LayerMixerPanel();
+      case PanelType.effectBank:
+        return const Center(child: Text('Effect Bank Panel'));
+      case PanelType.timeline:
+        return const Center(child: Text('Timeline Panel'));
+      case PanelType.mediaBrowser:
+        return const Center(child: Text('Media Browser Panel'));
+      case PanelType.audioAnalyzer:
+        return const Center(child: Text('Audio Analyzer Panel'));
+      case PanelType.hardwareBridge:
+        return const Center(child: Text('Hardware Bridge Panel'));
+      case PanelType.telemetry:
+        return const Center(child: Text('Telemetry Panel'));
+    }
   }
 }
